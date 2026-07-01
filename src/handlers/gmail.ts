@@ -163,7 +163,7 @@ function extractAttachments(
 export async function handleSendEmail(gmail: gmail_v1.Gmail, args: unknown): Promise<ToolResponse> {
   const validation = validateArgs(SendEmailSchema, args);
   if (!validation.success) return validation.response;
-  const { to, subject, body, html, cc, bcc, replyTo, attachments, threadId, inReplyTo } =
+  const { to, subject, body, html, cc, bcc, replyTo, attachments, threadId, inReplyTo, references } =
     validation.data;
 
   const raw = buildMimeMessage({
@@ -176,6 +176,7 @@ export async function handleSendEmail(gmail: gmail_v1.Gmail, args: unknown): Pro
     replyTo,
     attachments,
     inReplyTo,
+    references,
   });
 
   const response = await gmail.users.messages.send({
@@ -204,7 +205,7 @@ export async function handleDraftEmail(
 ): Promise<ToolResponse> {
   const validation = validateArgs(DraftEmailSchema, args);
   if (!validation.success) return validation.response;
-  const { draftId, to, subject, body, html, cc, bcc, replyTo, attachments, threadId } =
+  const { draftId, to, subject, body, html, cc, bcc, replyTo, attachments, threadId, inReplyTo, references } =
     validation.data;
 
   const raw = buildMimeMessage({
@@ -216,6 +217,8 @@ export async function handleDraftEmail(
     bcc,
     replyTo,
     attachments,
+    inReplyTo,
+    references,
   });
 
   const messagePayload = { raw, threadId };

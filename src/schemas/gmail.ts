@@ -119,6 +119,7 @@ export const SendEmailSchema = z.object({
   attachments: z.array(AttachmentSchema).optional().describe("File attachments"),
   threadId: z.string().optional().describe("Thread ID to reply to"),
   inReplyTo: z.string().optional().describe("Message-ID header for threading"),
+  references: z.string().optional().describe("References header chain for threading"),
 });
 
 export type SendEmailInput = z.infer<typeof SendEmailSchema>;
@@ -134,6 +135,8 @@ export const DraftEmailSchema = z.object({
   replyTo: z.string().email().optional().describe("Reply-to address"),
   attachments: z.array(AttachmentSchema).optional().describe("File attachments"),
   threadId: z.string().optional().describe("Thread ID for draft replies"),
+  inReplyTo: z.string().optional().describe("Message-ID header for threading (from the original message)"),
+  references: z.string().optional().describe("References header chain for threading"),
 });
 
 export type DraftEmailInput = z.infer<typeof DraftEmailSchema>;

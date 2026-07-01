@@ -2926,6 +2926,7 @@ export const gmailTools: ToolDefinition[] = [
         },
         threadId: { type: "string", description: "Thread ID to reply to" },
         inReplyTo: { type: "string", description: "Message-ID for threading" },
+        references: { type: "string", description: "References header chain for threading" },
       },
       required: ["to", "subject", "body"],
     },
@@ -2971,6 +2972,11 @@ export const gmailTools: ToolDefinition[] = [
         replyTo: { type: "string" },
         attachments: { type: "array" },
         threadId: { type: "string" },
+        inReplyTo: {
+          type: "string",
+          description: "Message-ID for threading (from the original message)",
+        },
+        references: { type: "string", description: "References header chain for threading" },
       },
     },
     outputSchema: {
