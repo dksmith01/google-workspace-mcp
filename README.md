@@ -2,6 +2,13 @@
 
 MCP server providing Claude access to Google Drive, Docs, Sheets, Slides, Calendar, Gmail, and Contacts.
 
+> **Maintained fork.** This is a self-maintained fork of
+> [`dguido/google-workspace-mcp`](https://github.com/dguido/google-workspace-mcp), which is archived
+> (read-only) and frozen at `3.4.4`. This fork adds threaded draft replies (`draft_email` sets
+> `In-Reply-To`/`References`) and is the version these docs install. Install it from GitHub
+> (`npx github:dksmith01/google-workspace-mcp`) or from source — the npm package `@dguido/google-workspace-mcp`
+> is the frozen upstream and does **not** include this fork's fixes.
+
 ## Quick Start
 
 ### 1. Set Up Google Cloud
@@ -21,7 +28,7 @@ MCP server providing Claude access to Google Drive, Docs, Sheets, Slides, Calend
   "mcpServers": {
     "google-workspace": {
       "command": "npx",
-      "args": ["@dguido/google-workspace-mcp"],
+      "args": ["github:dksmith01/google-workspace-mcp"],
       "env": {
         "GOOGLE_CLIENT_ID": "YOUR_CLIENT_ID.apps.googleusercontent.com",
         "GOOGLE_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
@@ -40,7 +47,7 @@ That's it. On first tool call, a browser window opens for Google OAuth consent. 
 Download the credentials JSON from Google Cloud Console and save to `~/.config/google-workspace-mcp/credentials.json`, then authenticate manually:
 
 ```bash
-npx @dguido/google-workspace-mcp auth
+npx github:dksmith01/google-workspace-mcp auth
 ```
 
 See [Advanced Configuration](docs/ADVANCED.md) for file-based setup, named profiles, and multi-account setup.
@@ -119,7 +126,7 @@ For LLM-optimized responses that reduce token usage by 20-50%, enable TOON forma
   "mcpServers": {
     "google-workspace": {
       "command": "npx",
-      "args": ["@dguido/google-workspace-mcp"],
+      "args": ["github:dksmith01/google-workspace-mcp"],
       "env": {
         "GOOGLE_WORKSPACE_SERVICES": "drive,gmail,calendar",
         "GOOGLE_WORKSPACE_TOON_FORMAT": "true"
@@ -142,7 +149,7 @@ To enable additional services, add them to `GOOGLE_WORKSPACE_SERVICES`:
   "mcpServers": {
     "google-workspace": {
       "command": "npx",
-      "args": ["@dguido/google-workspace-mcp"],
+      "args": ["github:dksmith01/google-workspace-mcp"],
       "env": {
         "GOOGLE_WORKSPACE_SERVICES": "drive,gmail,calendar,docs,sheets,slides"
       }
@@ -211,7 +218,7 @@ Apps in "Testing" status expire tokens after 7 days. Re-authenticate:
 
 ```bash
 rm ~/.config/google-workspace-mcp/tokens.json
-npx @dguido/google-workspace-mcp auth
+npx github:dksmith01/google-workspace-mcp auth
 ```
 
 **To avoid weekly re-authentication:** Publish your OAuth app (see [Avoiding Token Expiry](#avoiding-token-expiry) below).
@@ -273,7 +280,7 @@ See [Contributing Guide](CONTRIBUTING.md) for project structure and development 
 
 ## Origin
 
-This project is a substantial rewrite of [piotr-agier/google-drive-mcp](https://github.com/piotr-agier/google-drive-mcp), originally created by Piotr Agier.
+This project is a substantial rewrite of [piotr-agier/google-drive-mcp](https://github.com/piotr-agier/google-drive-mcp), originally created by Piotr Agier, then developed as [dguido/google-workspace-mcp](https://github.com/dguido/google-workspace-mcp) by Dan Guido. This repository is a self-maintained fork of that (now-archived) project.
 
 ## License
 

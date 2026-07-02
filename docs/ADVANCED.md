@@ -46,7 +46,7 @@ cp credentials.json ~/.config/google-workspace-mcp/profiles/work/
 2. Authenticate the profile:
 
 ```bash
-npx @dguido/google-workspace-mcp auth --profile work
+npx github:dksmith01/google-workspace-mcp auth --profile work
 ```
 
 3. Configure your MCP client:
@@ -56,7 +56,7 @@ npx @dguido/google-workspace-mcp auth --profile work
   "mcpServers": {
     "google-workspace": {
       "command": "npx",
-      "args": ["@dguido/google-workspace-mcp"],
+      "args": ["github:dksmith01/google-workspace-mcp"],
       "env": {
         "GOOGLE_WORKSPACE_MCP_PROFILE": "work"
       }
@@ -78,7 +78,7 @@ For full control, use env vars to specify credentials and tokens:
   "mcpServers": {
     "google-workspace": {
       "command": "npx",
-      "args": ["@dguido/google-workspace-mcp"],
+      "args": ["github:dksmith01/google-workspace-mcp"],
       "env": {
         "GOOGLE_CLIENT_ID": "12345.apps.googleusercontent.com",
         "GOOGLE_CLIENT_SECRET": "GOCSPX-...",
