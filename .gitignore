@@ -54,3 +54,10 @@ _compare/
 .cache/
 # Serena local config
 .serena/
+
+# Internal / private process artifacts — keep out of this public fork
+NEXT_SESSION.md
+DIARY.csv
+docs/internal/
+docs/solutions/
+.brain-config
