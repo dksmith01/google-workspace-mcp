@@ -2,6 +2,23 @@
 
 MCP server providing Claude access to Google Drive, Docs, Sheets, Slides, Calendar, and Gmail.
 
+## This is a maintained fork
+
+This repo is a fork of [`dguido/google-workspace-mcp`](https://github.com/dguido/google-workspace-mcp),
+which is **archived (read-only) and frozen at `3.4.4`**. There is no upstream to send PRs to and nothing
+to rebase onto, so this fork is self-maintained and **`main` is the source of truth** — land changes here
+directly (feature branch → merge), following the fork's own conventions below.
+
+**Divergence from upstream:** `draft_email` now sets the RFC822 threading headers (`In-Reply-To`,
+`References`), matching `send_email`, so draft replies thread in non-Gmail clients (Outlook/Apple Mail),
+not just Gmail. Upstream `draft_email` exposed only `threadId`. Keep future changes small and idiomatic to
+the three-layer pattern (schema → handler → tool definition) rather than porting foreign implementations.
+
+**Consumption is build-from-dist.** An MCP client registration runs the built `dist/index.js`, so after
+any `src/` change you must `npm run build` and reconnect the MCP server before the change takes effect.
+Account selection is per-registration via the `GOOGLE_WORKSPACE_MCP_PROFILE` env var (one profile = one
+Google account); per-profile credentials/tokens live under `~/.config/google-workspace-mcp/profiles/<profile>/`.
+
 ## Architecture
 
 ```
