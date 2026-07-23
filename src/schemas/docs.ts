@@ -71,6 +71,13 @@ export const FormatGoogleDocRangeSchema = z.object({
       blue: z.number().min(0).max(1).optional(),
     })
     .optional(),
+  backgroundColor: z
+    .object({
+      red: z.number().min(0).max(1).optional(),
+      green: z.number().min(0).max(1).optional(),
+      blue: z.number().min(0).max(1).optional(),
+    })
+    .optional(),
 
   // Paragraph formatting
   alignment: z.enum(["START", "CENTER", "END", "JUSTIFIED"]).optional(),
