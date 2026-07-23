@@ -5,6 +5,7 @@ export const CreateGoogleDocSchema = z
     name: z.string().min(1, "Document name is required"),
     content: z.string(),
     contentFormat: z.enum(["markdown", "text"]).optional().default("markdown"),
+    styleFrontmatter: z.boolean().optional().default(true),
     parentFolderId: z.string().optional(),
     parentPath: z.string().optional(),
   })
@@ -16,6 +17,7 @@ export const UpdateGoogleDocSchema = z.object({
   documentId: z.string().min(1, "Document ID is required"),
   content: z.string(),
   contentFormat: z.enum(["markdown", "text"]).optional().default("markdown"),
+  styleFrontmatter: z.boolean().optional().default(true),
 });
 
 export const GetGoogleDocContentSchema = z.object({

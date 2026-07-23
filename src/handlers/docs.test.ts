@@ -73,6 +73,105 @@ describe("handleCreateGoogleDoc", () => {
     expect(mockDocs.documents.batchUpdate).not.toHaveBeenCalled();
   });
 
+  it("auto-styles a leading yaml fence as a boxed block", async () => {
+    vi.mocked(mockDrive.files.create).mockResolvedValue({
+      data: {
+        id: "doc123",
+        name: "Test Doc",
+        webViewLink: "https://docs.google.com/d/doc123",
+      },
+    } as never);
+    // Imported structure: one paragraph per fence line with a blank between
+    vi.mocked(mockDocs.documents.get).mockResolvedValue({
+      data: {
+        body: {
+          content: [
+            {
+              startIndex: 1,
+              endIndex: 13,
+              paragraph: { elements: [{ textRun: { content: "title: Test\n" } }] },
+            },
+            {
+              startIndex: 13,
+              endIndex: 14,
+              paragraph: { elements: [{ textRun: { content: "\n" } }] },
+            },
+            {
+              startIndex: 14,
+              endIndex: 25,
+              paragraph: { elements: [{ textRun: { content: "author: Me\n" } }] },
+            },
+            {
+              startIndex: 25,
+              endIndex: 33,
+              paragraph: { elements: [{ textRun: { content: "Heading\n" } }] },
+            },
+          ],
+        },
+      },
+    } as never);
+    vi.mocked(mockDocs.documents.batchUpdate).mockResolvedValue({} as never);
+
+    const result = await handleCreateGoogleDoc(mockDrive, mockDocs, {
+      name: "Test Doc",
+      content: "```yaml\ntitle: Test\nauthor: Me\n```\n\n# Heading\n",
+    });
+    expect(result.isError).toBe(false);
+    expect(result.structuredContent).toMatchObject({ frontmatterStyled: true });
+
+    const request = vi.mocked(mockDocs.documents.batchUpdate).mock.calls[0][0] as unknown as {
+      requestBody: { requests: Array<Record<string, unknown>> };
+    };
+    const requests = request.requestBody.requests;
+    // Blank paragraph deleted, then range styled: text (monospace) + paragraph (shading/borders)
+    expect(requests[0]).toEqual({
+      deleteContentRange: { range: { startIndex: 13, endIndex: 14 } },
+    });
+    expect(requests[1]).toMatchObject({
+      updateTextStyle: { range: { startIndex: 1, endIndex: 24 } },
+    });
+    expect(requests[2]).toMatchObject({
+      updateParagraphStyle: { range: { startIndex: 1, endIndex: 24 } },
+    });
+  });
+
+  it("skips frontmatter styling when styleFrontmatter is false", async () => {
+    vi.mocked(mockDrive.files.create).mockResolvedValue({
+      data: {
+        id: "doc123",
+        name: "Test Doc",
+        webViewLink: "https://docs.google.com/d/doc123",
+      },
+    } as never);
+
+    const result = await handleCreateGoogleDoc(mockDrive, mockDocs, {
+      name: "Test Doc",
+      content: "```yaml\ntitle: Test\n```\n\n# Heading\n",
+      styleFrontmatter: false,
+    });
+    expect(result.isError).toBe(false);
+    expect(mockDocs.documents.get).not.toHaveBeenCalled();
+    expect(mockDocs.documents.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("succeeds with frontmatterStyled false when styling fails", async () => {
+    vi.mocked(mockDrive.files.create).mockResolvedValue({
+      data: {
+        id: "doc123",
+        name: "Test Doc",
+        webViewLink: "https://docs.google.com/d/doc123",
+      },
+    } as never);
+    vi.mocked(mockDocs.documents.get).mockRejectedValue(new Error("transient") as never);
+
+    const result = await handleCreateGoogleDoc(mockDrive, mockDocs, {
+      name: "Test Doc",
+      content: "```yaml\ntitle: Test\n```\n\n# Heading\n",
+    });
+    expect(result.isError).toBe(false);
+    expect(result.structuredContent).toMatchObject({ frontmatterStyled: false });
+  });
+
   it("creates document with literal text when contentFormat is text", async () => {
     vi.mocked(mockDrive.files.create).mockResolvedValue({
       data: {

@@ -16,7 +16,9 @@ not just Gmail. Upstream `draft_email` exposed only `threadId`. Additionally: `c
 `get_google_doc_content` and `export_file` support markdown export, Drive comment tools exist
 (`list_comments`, `reply_to_comment`, `resolve_comment`) for doc review workflows, and
 `format_google_doc_range` gained `backgroundColor`, `paragraphBackgroundColor` (shading), and
-`paragraphPadding` for Proof-style boxed blocks (used by the user-level `gdoc-sync` skill). Keep future changes
+`paragraphPadding` for Proof-style boxed blocks, and `create_google_doc`/`update_google_doc`
+auto-style a leading fenced code block (YAML frontmatter) as a boxed monospace block
+(`styleFrontmatter: false` opts out; used by the user-level `gdoc-sync` skill). Keep future changes
 small and idiomatic to the three-layer pattern (schema → handler → tool definition) rather than porting
 foreign implementations.
 

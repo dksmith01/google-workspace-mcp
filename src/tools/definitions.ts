@@ -1245,7 +1245,8 @@ export const docsTools: ToolDefinition[] = [
     name: "create_google_doc",
     description:
       "Create a new Google Doc. Content is interpreted as markdown by default and converted " +
-      "to native Doc formatting (headings, bold, lists, links, tables)",
+      "to native Doc formatting (headings, bold, lists, links, tables). A leading fenced code " +
+      "block (e.g. YAML frontmatter) is automatically styled as a boxed monospace block",
     inputSchema: {
       type: "object",
       properties: {
@@ -1257,6 +1258,12 @@ export const docsTools: ToolDefinition[] = [
           description:
             "How to interpret content: 'markdown' (default) converts to native Doc formatting, " +
             "'text' inserts literally as plain text",
+        },
+        styleFrontmatter: {
+          type: "boolean",
+          description:
+            "Style a leading fenced code block as a dark boxed monospace block (default: true; " +
+            "markdown content only)",
         },
         parentFolderId: {
           type: "string",
@@ -1279,6 +1286,11 @@ export const docsTools: ToolDefinition[] = [
           type: "string",
           description: "Link to view the document",
         },
+        frontmatterStyled: {
+          type: "boolean",
+          description:
+            "Whether a leading fenced block was styled as a box (markdown content only)",
+        },
       },
     },
   },
@@ -1286,8 +1298,9 @@ export const docsTools: ToolDefinition[] = [
     name: "update_google_doc",
     description:
       "Replace all content in a Google Doc. Content is interpreted as markdown by default and " +
-      "converted to native Doc formatting. Note: full replacement discards manual doc-side " +
-      "formatting and orphans comment anchors",
+      "converted to native Doc formatting; a leading fenced code block (e.g. YAML frontmatter) " +
+      "is automatically styled as a boxed monospace block. Note: full replacement discards " +
+      "manual doc-side formatting and orphans comment anchors",
     inputSchema: {
       type: "object",
       properties: {
@@ -1300,6 +1313,12 @@ export const docsTools: ToolDefinition[] = [
             "How to interpret content: 'markdown' (default) converts to native Doc formatting, " +
             "'text' inserts literally as plain text",
         },
+        styleFrontmatter: {
+          type: "boolean",
+          description:
+            "Style a leading fenced code block as a dark boxed monospace block (default: true; " +
+            "markdown content only)",
+        },
       },
       required: ["documentId", "content"],
     },
@@ -1310,6 +1329,11 @@ export const docsTools: ToolDefinition[] = [
         updated: {
           type: "boolean",
           description: "Whether the update succeeded",
+        },
+        frontmatterStyled: {
+          type: "boolean",
+          description:
+            "Whether a leading fenced block was styled as a box (markdown content only)",
         },
       },
     },
