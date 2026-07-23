@@ -58,6 +58,7 @@ _compare/
 # Internal / private process artifacts — keep out of this public fork
 NEXT_SESSION.md
 DIARY.csv
+CONCEPTS.md
 docs/internal/
 docs/solutions/
 .brain-config
