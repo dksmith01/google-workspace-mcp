@@ -1511,7 +1511,18 @@ export const docsTools: ToolDefinition[] = [
         },
         backgroundColor: {
           type: "object",
-          description: "Text background/highlight color (RGB values 0-1)",
+          description: "Text background/highlight color (RGB values 0-1), painted behind glyphs only",
+          properties: {
+            red: { type: "number" },
+            green: { type: "number" },
+            blue: { type: "number" },
+          },
+        },
+        paragraphBackgroundColor: {
+          type: "object",
+          description:
+            "Paragraph shading color (RGB values 0-1). Fills the full paragraph width — " +
+            "use for solid block backgrounds (e.g. code/frontmatter boxes)",
           properties: {
             red: { type: "number" },
             green: { type: "number" },
