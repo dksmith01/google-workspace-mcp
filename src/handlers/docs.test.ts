@@ -23,6 +23,8 @@ function createMockDrive(): drive_v3.Drive {
       list: vi.fn(),
       create: vi.fn(),
       get: vi.fn(),
+      update: vi.fn(),
+      export: vi.fn(),
     },
   } as unknown as drive_v3.Drive;
 }
@@ -48,7 +50,30 @@ describe("handleCreateGoogleDoc", () => {
     } as never);
   });
 
-  it("creates document successfully", async () => {
+  it("creates document with native markdown import by default", async () => {
+    vi.mocked(mockDrive.files.create).mockResolvedValue({
+      data: {
+        id: "doc123",
+        name: "Test Doc",
+        webViewLink: "https://docs.google.com/d/doc123",
+      },
+    } as never);
+
+    const result = await handleCreateGoogleDoc(mockDrive, mockDocs, {
+      name: "Test Doc",
+      content: "## Heading\n\nHello World",
+    });
+    expect(result.isError).toBe(false);
+    expect(result.content[0].text).toContain("Created Google Doc");
+    expect(mockDrive.files.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        media: { mimeType: "text/markdown", body: "## Heading\n\nHello World" },
+      }),
+    );
+    expect(mockDocs.documents.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("creates document with literal text when contentFormat is text", async () => {
     vi.mocked(mockDrive.files.create).mockResolvedValue({
       data: {
         id: "doc123",
@@ -61,9 +86,13 @@ describe("handleCreateGoogleDoc", () => {
     const result = await handleCreateGoogleDoc(mockDrive, mockDocs, {
       name: "Test Doc",
       content: "Hello World",
+      contentFormat: "text",
     });
     expect(result.isError).toBe(false);
-    expect(result.content[0].text).toContain("Created Google Doc");
+    expect(mockDrive.files.create).toHaveBeenCalledWith(
+      expect.not.objectContaining({ media: expect.anything() }),
+    );
+    expect(mockDocs.documents.batchUpdate).toHaveBeenCalled();
   });
 
   it("returns error when document already exists", async () => {
@@ -89,13 +118,35 @@ describe("handleCreateGoogleDoc", () => {
 });
 
 describe("handleUpdateGoogleDoc", () => {
+  let mockDrive: drive_v3.Drive;
   let mockDocs: docs_v1.Docs;
 
   beforeEach(() => {
+    mockDrive = createMockDrive();
     mockDocs = createMockDocs();
   });
 
-  it("updates document successfully", async () => {
+  it("updates document via native markdown import by default", async () => {
+    vi.mocked(mockDrive.files.update).mockResolvedValue({
+      data: { name: "Test Doc" },
+    } as never);
+
+    const result = await handleUpdateGoogleDoc(mockDrive, mockDocs, {
+      documentId: "doc123",
+      content: "## New heading\n\nNew content",
+    });
+    expect(result.isError).toBe(false);
+    expect(result.content[0].text).toContain("Updated Google Doc");
+    expect(mockDrive.files.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileId: "doc123",
+        media: { mimeType: "text/markdown", body: "## New heading\n\nNew content" },
+      }),
+    );
+    expect(mockDocs.documents.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("updates document with literal text when contentFormat is text", async () => {
     vi.mocked(mockDocs.documents.get).mockResolvedValue({
       data: {
         title: "Test Doc",
@@ -104,16 +155,19 @@ describe("handleUpdateGoogleDoc", () => {
     } as never);
     vi.mocked(mockDocs.documents.batchUpdate).mockResolvedValue({} as never);
 
-    const result = await handleUpdateGoogleDoc(mockDocs, {
+    const result = await handleUpdateGoogleDoc(mockDrive, mockDocs, {
       documentId: "doc123",
       content: "New content",
+      contentFormat: "text",
     });
     expect(result.isError).toBe(false);
     expect(result.content[0].text).toContain("Updated Google Doc");
+    expect(mockDrive.files.update).not.toHaveBeenCalled();
+    expect(mockDocs.documents.batchUpdate).toHaveBeenCalled();
   });
 
   it("returns error for empty documentId", async () => {
-    const result = await handleUpdateGoogleDoc(mockDocs, {
+    const result = await handleUpdateGoogleDoc(mockDrive, mockDocs, {
       documentId: "",
       content: "Content",
     });
@@ -157,6 +211,24 @@ describe("handleGetGoogleDocContent", () => {
     });
     expect(result.isError).toBe(false);
     expect(result.content[0].text).toContain("Hello World");
+  });
+
+  it("returns document as markdown when format is markdown", async () => {
+    vi.mocked(mockDrive.files.export).mockResolvedValue({
+      data: "## Heading\n\nHello World",
+    } as never);
+
+    const result = await handleGetGoogleDocContent(mockDrive, mockDocs, {
+      documentId: "doc123",
+      format: "markdown",
+    });
+    expect(result.isError).toBe(false);
+    expect(result.content[0].text).toContain("## Heading");
+    expect(mockDrive.files.export).toHaveBeenCalledWith(
+      { fileId: "doc123", mimeType: "text/markdown" },
+      { responseType: "text" },
+    );
+    expect(mockDocs.documents.get).not.toHaveBeenCalled();
   });
 
   it("returns error for empty documentId", async () => {

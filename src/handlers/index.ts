@@ -43,6 +43,9 @@ export {
   handleFormatGoogleDocRange,
 } from "./docs.js";
 
+// Comments handlers
+export { handleListComments, handleReplyToComment, handleResolveComment } from "./comments.js";
+
 // Sheets handlers
 export {
   handleCreateGoogleSheet,

@@ -91,6 +91,10 @@ import {
   handleRestoreFromTrash,
   handleEmptyTrash,
   handleGetFolderTree,
+  // Comments handlers
+  handleListComments,
+  handleReplyToComment,
+  handleResolveComment,
   // Docs handlers
   handleCreateGoogleDoc,
   handleUpdateGoogleDoc,
@@ -545,6 +549,9 @@ function createToolRegistry(): Record<string, ToolHandler> {
       restore_from_trash: ({ drive }, args) => handleRestoreFromTrash(drive, args),
       empty_trash: ({ drive, context }, args) => handleEmptyTrash(drive, args, context),
       get_folder_tree: ({ drive }, args) => handleGetFolderTree(drive, args),
+      list_comments: ({ drive }, args) => handleListComments(drive, args),
+      reply_to_comment: ({ drive }, args) => handleReplyToComment(drive, args),
+      resolve_comment: ({ drive }, args) => handleResolveComment(drive, args),
     } satisfies Record<string, ToolHandler>);
   }
 
@@ -552,7 +559,7 @@ function createToolRegistry(): Record<string, ToolHandler> {
   if (isServiceEnabled("docs")) {
     Object.assign(registry, {
       create_google_doc: ({ drive, docs }, args) => handleCreateGoogleDoc(drive, docs, args),
-      update_google_doc: ({ docs }, args) => handleUpdateGoogleDoc(docs, args),
+      update_google_doc: ({ drive, docs }, args) => handleUpdateGoogleDoc(drive, docs, args),
       get_google_doc_content: ({ drive, docs }, args) =>
         handleGetGoogleDocContent(drive, docs, args),
       append_to_doc: ({ docs }, args) => handleAppendToDoc(docs, args),

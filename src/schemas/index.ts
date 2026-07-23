@@ -86,6 +86,11 @@ export type {
   FormatGoogleDocRangeInput,
 } from "./docs.js";
 
+// Comments schemas
+export { ListCommentsSchema, ReplyToCommentSchema, ResolveCommentSchema } from "./comments.js";
+
+export type { ListCommentsInput, ReplyToCommentInput, ResolveCommentInput } from "./comments.js";
+
 // Sheets schemas
 export {
   SheetTabsSchema,

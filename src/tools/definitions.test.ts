@@ -76,11 +76,11 @@ describe("getAllTools", () => {
       expect(names).toContain("get_status");
     });
 
-    it("returns exactly 30 read-only tools", () => {
+    it("returns exactly 32 read-only tools", () => {
       process.env.GOOGLE_WORKSPACE_READ_ONLY = "true";
       delete process.env.GOOGLE_WORKSPACE_SERVICES;
       const tools = getAllTools();
-      expect(tools.length).toBe(31);
+      expect(tools.length).toBe(32);
     });
   });
 });

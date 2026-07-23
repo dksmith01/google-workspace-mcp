@@ -391,8 +391,8 @@ export const driveTools: ToolDefinition[] = [
         },
         format: {
           type: "string",
-          description: "Export format: pdf, docx (Docs), xlsx/csv/tsv (Sheets), pptx (Slides)",
-          enum: ["pdf", "docx", "xlsx", "pptx", "csv", "tsv", "odt", "ods", "odp"],
+          description: "Export format: pdf, docx, md (Docs), xlsx/csv/tsv (Sheets), pptx (Slides)",
+          enum: ["pdf", "docx", "md", "xlsx", "pptx", "csv", "tsv", "odt", "ods", "odp"],
         },
         outputPath: {
           type: "string",
@@ -1134,18 +1134,130 @@ export const driveTools: ToolDefinition[] = [
       },
     },
   },
+  // Comment tools
+  {
+    name: "list_comments",
+    readOnly: true,
+    description:
+      "List comments on a Drive file (e.g. a Google Doc), including quoted text, replies, " +
+      "and resolved status. Defaults to open comments only",
+    inputSchema: {
+      type: "object",
+      properties: {
+        fileId: { type: "string", description: "File ID" },
+        includeResolved: {
+          type: "boolean",
+          description: "Include resolved comments (default: false)",
+        },
+      },
+      required: ["fileId"],
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        fileId: { type: "string", description: "File ID" },
+        comments: {
+          type: "array",
+          description: "Comments on the file",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Comment ID" },
+              author: { type: "string", description: "Author display name" },
+              content: { type: "string", description: "Comment text" },
+              quotedText: {
+                type: "string",
+                description: "Document text the comment is anchored to",
+              },
+              resolved: { type: "boolean", description: "Whether the comment is resolved" },
+              createdTime: { type: "string", description: "Creation timestamp" },
+              modifiedTime: { type: "string", description: "Last modified timestamp" },
+              replies: {
+                type: "array",
+                description: "Replies to this comment",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", description: "Reply ID" },
+                    author: { type: "string", description: "Author display name" },
+                    content: { type: "string", description: "Reply text" },
+                    action: {
+                      type: "string",
+                      description: "'resolve' or 'reopen' if the reply changed status",
+                    },
+                    createdTime: { type: "string", description: "Creation timestamp" },
+                  },
+                },
+              },
+            },
+          },
+        },
+        total: { type: "number", description: "Number of comments returned" },
+      },
+    },
+  },
+  {
+    name: "reply_to_comment",
+    description: "Reply to a comment on a Drive file",
+    inputSchema: {
+      type: "object",
+      properties: {
+        fileId: { type: "string", description: "File ID" },
+        commentId: { type: "string", description: "Comment ID to reply to" },
+        content: { type: "string", description: "Reply text" },
+      },
+      required: ["fileId", "commentId", "content"],
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        commentId: { type: "string", description: "Comment ID replied to" },
+        replyId: { type: "string", description: "Created reply ID" },
+      },
+    },
+  },
+  {
+    name: "resolve_comment",
+    description: "Resolve a comment on a Drive file, optionally with a closing reply",
+    inputSchema: {
+      type: "object",
+      properties: {
+        fileId: { type: "string", description: "File ID" },
+        commentId: { type: "string", description: "Comment ID to resolve" },
+        content: { type: "string", description: "Optional closing reply text" },
+      },
+      required: ["fileId", "commentId"],
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        commentId: { type: "string", description: "Resolved comment ID" },
+        replyId: { type: "string", description: "ID of the resolving reply" },
+        resolved: { type: "boolean", description: "Whether the comment was resolved" },
+      },
+    },
+  },
 ];
 
 // Docs tools
 export const docsTools: ToolDefinition[] = [
   {
     name: "create_google_doc",
-    description: "Create a new Google Doc",
+    description:
+      "Create a new Google Doc. Content is interpreted as markdown by default and converted " +
+      "to native Doc formatting (headings, bold, lists, links, tables)",
     inputSchema: {
       type: "object",
       properties: {
         name: { type: "string", description: "Doc name" },
-        content: { type: "string", description: "Doc content" },
+        content: { type: "string", description: "Doc content (markdown by default)" },
+        contentFormat: {
+          type: "string",
+          enum: ["markdown", "text"],
+          description:
+            "How to interpret content: 'markdown' (default) converts to native Doc formatting, " +
+            "'text' inserts literally as plain text",
+        },
         parentFolderId: {
           type: "string",
           description: "Parent folder ID (mutually exclusive with parentPath)",
@@ -1172,12 +1284,22 @@ export const docsTools: ToolDefinition[] = [
   },
   {
     name: "update_google_doc",
-    description: "Replace content in a Google Doc",
+    description:
+      "Replace all content in a Google Doc. Content is interpreted as markdown by default and " +
+      "converted to native Doc formatting. Note: full replacement discards manual doc-side " +
+      "formatting and orphans comment anchors",
     inputSchema: {
       type: "object",
       properties: {
         documentId: { type: "string", description: "Doc ID" },
-        content: { type: "string", description: "New content" },
+        content: { type: "string", description: "New content (markdown by default)" },
+        contentFormat: {
+          type: "string",
+          enum: ["markdown", "text"],
+          description:
+            "How to interpret content: 'markdown' (default) converts to native Doc formatting, " +
+            "'text' inserts literally as plain text",
+        },
       },
       required: ["documentId", "content"],
     },
@@ -1195,11 +1317,21 @@ export const docsTools: ToolDefinition[] = [
   {
     name: "get_google_doc_content",
     readOnly: true,
-    description: "Read content from a Google Doc",
+    description:
+      "Read content from a Google Doc. Use format 'markdown' to get the document as markdown " +
+      "(preserves headings, bold, lists, links); default 'indexed' returns plain text with " +
+      "character indices for index-based edits",
     inputSchema: {
       type: "object",
       properties: {
         documentId: { type: "string", description: "Document ID" },
+        format: {
+          type: "string",
+          enum: ["indexed", "markdown"],
+          description:
+            "'indexed' (default): plain text segments with character indices. " +
+            "'markdown': full document exported as markdown",
+        },
       },
       required: ["documentId"],
     },
@@ -1208,6 +1340,10 @@ export const docsTools: ToolDefinition[] = [
       properties: {
         documentId: { type: "string", description: "Document ID" },
         title: { type: "string", description: "Document title" },
+        markdown: {
+          type: "string",
+          description: "Document content as markdown (only when format is 'markdown')",
+        },
         content: {
           type: "array",
           description: "Document content segments with indices",

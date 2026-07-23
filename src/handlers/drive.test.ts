@@ -494,6 +494,25 @@ describe("handleExportFile", () => {
     expect(result.content[0].text).toContain("MyDoc");
   });
 
+  it("exports Google Doc to markdown successfully", async () => {
+    vi.mocked(mockDrive.files.get).mockResolvedValue({
+      data: { name: "MyDoc", mimeType: "application/vnd.google-apps.document" },
+    } as never);
+    vi.mocked(mockDrive.files.export).mockResolvedValue({
+      data: new ArrayBuffer(100),
+    } as never);
+
+    const result = await handleExportFile(mockDrive, {
+      fileId: "doc123",
+      format: "md",
+    });
+    expect(result.isError).toBe(false);
+    expect(mockDrive.files.export).toHaveBeenCalledWith(
+      expect.objectContaining({ mimeType: "text/markdown" }),
+      expect.anything(),
+    );
+  });
+
   it("exports Google Sheet to CSV successfully", async () => {
     vi.mocked(mockDrive.files.get).mockResolvedValue({
       data: {

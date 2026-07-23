@@ -31,6 +31,24 @@ describe("CreateGoogleDocSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("defaults contentFormat to markdown", () => {
+    const result = CreateGoogleDocSchema.safeParse({
+      name: "My Doc",
+      content: "Hello",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.contentFormat).toBe("markdown");
+  });
+
+  it("rejects invalid contentFormat", () => {
+    const result = CreateGoogleDocSchema.safeParse({
+      name: "My Doc",
+      content: "Hello",
+      contentFormat: "html",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("UpdateGoogleDocSchema", () => {
@@ -62,6 +80,18 @@ describe("GetGoogleDocContentSchema", () => {
   it("rejects empty documentId", () => {
     const result = GetGoogleDocContentSchema.safeParse({ documentId: "" });
     expect(result.success).toBe(false);
+  });
+
+  it("defaults format to indexed and accepts markdown", () => {
+    const defaulted = GetGoogleDocContentSchema.safeParse({ documentId: "doc123" });
+    expect(defaulted.success).toBe(true);
+    if (defaulted.success) expect(defaulted.data.format).toBe("indexed");
+
+    const markdown = GetGoogleDocContentSchema.safeParse({
+      documentId: "doc123",
+      format: "markdown",
+    });
+    expect(markdown.success).toBe(true);
   });
 });
 
