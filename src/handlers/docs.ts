@@ -31,6 +31,159 @@ function getDocumentEndIndex(document: docs_v1.Schema$Document): number {
   return content[content.length - 1]?.endIndex || 1;
 }
 
+// -----------------------------------------------------------------------------
+// FRONTMATTER BOX STYLING
+// -----------------------------------------------------------------------------
+// Drive's markdown import renders a leading fenced code block (typically YAML
+// frontmatter) as plain default-font paragraphs with blank paragraphs between
+// lines. These helpers restore a Proof-style box: monospace light text on a
+// solid dark shaded block with padding.
+
+const FRONTMATTER_TEXT_COLOR = { red: 0.92, green: 0.92, blue: 0.92 };
+const FRONTMATTER_BOX_COLOR = { red: 0.05, green: 0.05, blue: 0.05 };
+const FRONTMATTER_PADDING_PT = 8;
+
+function findLeadingFenceLines(content: string): string[] | null {
+  const match = content.match(/^```[a-zA-Z]*\r?\n([\s\S]*?)\r?\n```(?:\r?\n|$)/);
+  if (!match) return null;
+  const lines = match[1].split(/\r?\n/).filter((line) => line.trim() !== "");
+  return lines.length > 0 ? lines : null;
+}
+
+interface ParagraphInfo {
+  startIndex: number;
+  endIndex: number;
+  text: string;
+}
+
+function getParagraphs(document: docs_v1.Schema$Document): ParagraphInfo[] {
+  const paragraphs: ParagraphInfo[] = [];
+  for (const element of document.body?.content ?? []) {
+    if (!element.paragraph) continue;
+    const text = (element.paragraph.elements ?? [])
+      .map((textElement) => textElement.textRun?.content ?? "")
+      .join("");
+    paragraphs.push({
+      startIndex: element.startIndex ?? 0,
+      endIndex: element.endIndex ?? 0,
+      text,
+    });
+  }
+  return paragraphs;
+}
+
+interface FenceLocation {
+  blankRanges: Array<{ startIndex: number; endIndex: number }>;
+  endIndex: number;
+}
+
+/** Match the fence lines against leading doc paragraphs, collecting import-artifact blanks. */
+function locateImportedFenceLines(
+  paragraphs: ParagraphInfo[],
+  lines: string[],
+): FenceLocation | null {
+  const blankRanges: FenceLocation["blankRanges"] = [];
+  let endIndex = 0;
+  let p = 0;
+  for (const line of lines) {
+    while (p < paragraphs.length && paragraphs[p].text === "\n") {
+      blankRanges.push({
+        startIndex: paragraphs[p].startIndex,
+        endIndex: paragraphs[p].endIndex,
+      });
+      p++;
+    }
+    if (p >= paragraphs.length || paragraphs[p].text.trimEnd() !== line.trimEnd()) return null;
+    endIndex = paragraphs[p].endIndex;
+    p++;
+  }
+  return { blankRanges, endIndex };
+}
+
+function buildFrontmatterBoxRequests(location: FenceLocation): docs_v1.Schema$Request[] {
+  const requests: docs_v1.Schema$Request[] = [];
+  const descending = [...location.blankRanges].sort((a, b) => b.startIndex - a.startIndex);
+  for (const range of descending) {
+    requests.push({ deleteContentRange: { range } });
+  }
+
+  const deletedChars = location.blankRanges.reduce(
+    (total, range) => total + (range.endIndex - range.startIndex),
+    0,
+  );
+  const range = { startIndex: 1, endIndex: location.endIndex - deletedChars };
+
+  requests.push({
+    updateTextStyle: {
+      range,
+      textStyle: {
+        weightedFontFamily: { fontFamily: "Courier New" },
+        fontSize: { magnitude: 10, unit: "PT" },
+        foregroundColor: toDocsColorStyle(FRONTMATTER_TEXT_COLOR),
+      },
+      fields: "weightedFontFamily,fontSize,foregroundColor",
+    },
+  });
+
+  const border = {
+    color: {},
+    dashStyle: "SOLID",
+    padding: { magnitude: FRONTMATTER_PADDING_PT, unit: "PT" },
+    width: { magnitude: 0, unit: "PT" },
+  };
+  requests.push({
+    updateParagraphStyle: {
+      range,
+      paragraphStyle: {
+        shading: { backgroundColor: toDocsColorStyle(FRONTMATTER_BOX_COLOR) },
+        spaceAbove: { magnitude: 0, unit: "PT" },
+        spaceBelow: { magnitude: 0, unit: "PT" },
+        borderLeft: border,
+        borderRight: border,
+        borderTop: border,
+        borderBottom: border,
+      },
+      fields:
+        "shading.backgroundColor,spaceAbove,spaceBelow," +
+        "borderLeft,borderRight,borderTop,borderBottom",
+    },
+  });
+  return requests;
+}
+
+/**
+ * Style a markdown-imported leading fence as a boxed block.
+ * Never throws: the doc write already succeeded, so styling failures are
+ * logged and reported via the returned flag instead of failing the tool call.
+ */
+async function styleImportedFrontmatter(
+  docs: docs_v1.Docs,
+  documentId: string,
+  content: string,
+): Promise<boolean> {
+  const lines = findLeadingFenceLines(content);
+  if (!lines) return false;
+
+  try {
+    const document = await docs.documents.get({ documentId });
+    const location = locateImportedFenceLines(getParagraphs(document.data), lines);
+    if (!location) {
+      log("Frontmatter styling skipped: imported paragraphs did not match fence lines", {
+        documentId,
+      });
+      return false;
+    }
+    await docs.documents.batchUpdate({
+      documentId,
+      requestBody: { requests: buildFrontmatterBoxRequests(location) },
+    });
+    return true;
+  } catch (styleError) {
+    log("Frontmatter styling failed", { documentId, error: String(styleError) });
+    return false;
+  }
+}
+
 export async function handleCreateGoogleDoc(
   drive: drive_v3.Drive,
   docs: docs_v1.Docs,
@@ -92,6 +245,11 @@ export async function handleCreateGoogleDoc(
   }
   const doc = docResponse.data;
 
+  let frontmatterStyled: boolean | undefined;
+  if (useMarkdownImport && data.styleFrontmatter) {
+    frontmatterStyled = await styleImportedFrontmatter(docs, doc.id!, data.content);
+  }
+
   if (!useMarkdownImport && data.content.length > 0) {
     await docs.documents.batchUpdate({
       documentId: doc.id!,
@@ -124,6 +282,7 @@ export async function handleCreateGoogleDoc(
       id: doc.id!,
       name: doc.name!,
       webViewLink: doc.webViewLink!,
+      ...(frontmatterStyled !== undefined && { frontmatterStyled }),
     },
   );
 }
@@ -146,9 +305,15 @@ export async function handleUpdateGoogleDoc(
       supportsAllDrives: true,
     });
 
+    let frontmatterStyled: boolean | undefined;
+    if (data.styleFrontmatter) {
+      frontmatterStyled = await styleImportedFrontmatter(docs, data.documentId, data.content);
+    }
+
     return structuredResponse(`Updated Google Doc: ${updateResponse.data.name}`, {
       title: updateResponse.data.name!,
       updated: true,
+      ...(frontmatterStyled !== undefined && { frontmatterStyled }),
     });
   }
 
