@@ -87,6 +87,7 @@ export const FormatGoogleDocRangeSchema = z.object({
       blue: z.number().min(0).max(1).optional(),
     })
     .optional(),
+  paragraphPadding: z.number().min(0).optional(),
   alignment: z.enum(["START", "CENTER", "END", "JUSTIFIED"]).optional(),
   lineSpacing: z.number().optional(),
   spaceAbove: z.number().optional(),
