@@ -13,8 +13,10 @@ directly (feature branch → merge), following the fork's own conventions below.
 `References`), matching `send_email`, so draft replies thread in non-Gmail clients (Outlook/Apple Mail),
 not just Gmail. Upstream `draft_email` exposed only `threadId`. Additionally: `create_google_doc` /
 `update_google_doc` use Drive's native markdown import by default (`contentFormat: "text"` opts out),
-`get_google_doc_content` and `export_file` support markdown export, and Drive comment tools exist
-(`list_comments`, `reply_to_comment`, `resolve_comment`) for doc review workflows. Keep future changes
+`get_google_doc_content` and `export_file` support markdown export, Drive comment tools exist
+(`list_comments`, `reply_to_comment`, `resolve_comment`) for doc review workflows, and
+`format_google_doc_range` gained `backgroundColor`, `paragraphBackgroundColor` (shading), and
+`paragraphPadding` for Proof-style boxed blocks (used by the user-level `gdoc-sync` skill). Keep future changes
 small and idiomatic to the three-layer pattern (schema → handler → tool definition) rather than porting
 foreign implementations.
 
