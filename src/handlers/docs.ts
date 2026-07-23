@@ -570,6 +570,7 @@ function buildDocTextStyle(data: DocTextFormatOptions): {
 interface DocParagraphFormatOptions {
   namedStyleType?: string;
   paragraphBackgroundColor?: { red?: number; green?: number; blue?: number };
+  paragraphPadding?: number;
   alignment?: string;
   lineSpacing?: number;
   spaceAbove?: number;
@@ -607,6 +608,20 @@ function buildDocParagraphStyle(data: DocParagraphFormatOptions): {
     // Shading fills the full paragraph width, unlike text backgroundColor (glyph highlight)
     style.shading = { backgroundColor: toDocsColorStyle(data.paragraphBackgroundColor) };
     fields.push("shading.backgroundColor");
+  }
+  if (data.paragraphPadding !== undefined) {
+    // Invisible zero-width borders carry the padding; shading extends into the padded area
+    const border = {
+      color: {},
+      dashStyle: "SOLID",
+      padding: { magnitude: data.paragraphPadding, unit: "PT" },
+      width: { magnitude: 0, unit: "PT" },
+    };
+    style.borderLeft = border;
+    style.borderRight = border;
+    style.borderTop = border;
+    style.borderBottom = border;
+    fields.push("borderLeft", "borderRight", "borderTop", "borderBottom");
   }
 
   return { style, fields };
@@ -660,8 +675,8 @@ export async function handleFormatGoogleDocRange(
     return errorResponse(
       "No formatting options specified. Provide at least one of: " +
         "bold, italic, underline, strikethrough, fontSize, fontFamily, foregroundColor, " +
-        "backgroundColor, paragraphBackgroundColor, namedStyleType, alignment, lineSpacing, " +
-        "spaceAbove, spaceBelow.",
+        "backgroundColor, paragraphBackgroundColor, paragraphPadding, namedStyleType, " +
+        "alignment, lineSpacing, spaceAbove, spaceBelow.",
     );
   }
 

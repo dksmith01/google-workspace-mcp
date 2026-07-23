@@ -1529,6 +1529,12 @@ export const docsTools: ToolDefinition[] = [
             blue: { type: "number" },
           },
         },
+        paragraphPadding: {
+          type: "number",
+          description:
+            "Padding in points between paragraph text and its edges (via invisible borders). " +
+            "Shading extends into the padded area — use with paragraphBackgroundColor",
+        },
         // Paragraph formatting
         alignment: {
           type: "string",

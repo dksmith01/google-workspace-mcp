@@ -498,6 +498,46 @@ describe("handleFormatGoogleDocRange", () => {
     );
   });
 
+  it("applies paragraphPadding as invisible borders", async () => {
+    vi.mocked(mockDocs.documents.get).mockResolvedValue({
+      data: { body: { content: [{ endIndex: 100 }] } },
+    } as never);
+    vi.mocked(mockDocs.documents.batchUpdate).mockResolvedValue({} as never);
+
+    const result = await handleFormatGoogleDocRange(mockDocs, {
+      documentId: "doc123",
+      startIndex: 1,
+      endIndex: 10,
+      paragraphPadding: 8,
+    });
+    expect(result.isError).toBe(false);
+    const expectedBorder = {
+      color: {},
+      dashStyle: "SOLID",
+      padding: { magnitude: 8, unit: "PT" },
+      width: { magnitude: 0, unit: "PT" },
+    };
+    expect(mockDocs.documents.batchUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestBody: {
+          requests: [
+            expect.objectContaining({
+              updateParagraphStyle: expect.objectContaining({
+                paragraphStyle: {
+                  borderLeft: expectedBorder,
+                  borderRight: expectedBorder,
+                  borderTop: expectedBorder,
+                  borderBottom: expectedBorder,
+                },
+                fields: "borderLeft,borderRight,borderTop,borderBottom",
+              }),
+            }),
+          ],
+        },
+      }),
+    );
+  });
+
   it("applies backgroundColor via updateTextStyle", async () => {
     vi.mocked(mockDocs.documents.get).mockResolvedValue({
       data: { body: { content: [{ endIndex: 100 }] } },
