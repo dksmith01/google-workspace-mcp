@@ -11,8 +11,12 @@ directly (feature branch → merge), following the fork's own conventions below.
 
 **Divergence from upstream:** `draft_email` now sets the RFC822 threading headers (`In-Reply-To`,
 `References`), matching `send_email`, so draft replies thread in non-Gmail clients (Outlook/Apple Mail),
-not just Gmail. Upstream `draft_email` exposed only `threadId`. Keep future changes small and idiomatic to
-the three-layer pattern (schema → handler → tool definition) rather than porting foreign implementations.
+not just Gmail. Upstream `draft_email` exposed only `threadId`. Additionally: `create_google_doc` /
+`update_google_doc` use Drive's native markdown import by default (`contentFormat: "text"` opts out),
+`get_google_doc_content` and `export_file` support markdown export, and Drive comment tools exist
+(`list_comments`, `reply_to_comment`, `resolve_comment`) for doc review workflows. Keep future changes
+small and idiomatic to the three-layer pattern (schema → handler → tool definition) rather than porting
+foreign implementations.
 
 **Consumption is build-from-dist.** An MCP client registration runs the built `dist/index.js`, so after
 any `src/` change you must `npm run build` and reconnect the MCP server before the change takes effect.

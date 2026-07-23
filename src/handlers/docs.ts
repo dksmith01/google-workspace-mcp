@@ -56,9 +56,11 @@ export async function handleCreateGoogleDoc(
     );
   }
 
-  log("Creating Google Doc", { parentFolderId });
+  log("Creating Google Doc", { parentFolderId, contentFormat: data.contentFormat });
 
-  // Create empty doc
+  // Markdown content is converted natively by Drive at creation time
+  const useMarkdownImport = data.contentFormat === "markdown" && data.content.length > 0;
+
   let docResponse;
   try {
     docResponse = await drive.files.create({
@@ -67,6 +69,9 @@ export async function handleCreateGoogleDoc(
         mimeType: "application/vnd.google-apps.document",
         parents: [parentFolderId],
       },
+      ...(useMarkdownImport && {
+        media: { mimeType: "text/markdown", body: data.content },
+      }),
       fields: "id, name, webViewLink",
       supportsAllDrives: true,
     });
@@ -87,29 +92,31 @@ export async function handleCreateGoogleDoc(
   }
   const doc = docResponse.data;
 
-  await docs.documents.batchUpdate({
-    documentId: doc.id!,
-    requestBody: {
-      requests: [
-        {
-          insertText: { location: { index: 1 }, text: data.content },
-        },
-        // Ensure the text is formatted as normal text, not as a header
-        {
-          updateParagraphStyle: {
-            range: {
-              startIndex: 1,
-              endIndex: data.content.length + 1,
-            },
-            paragraphStyle: {
-              namedStyleType: "NORMAL_TEXT",
-            },
-            fields: "namedStyleType",
+  if (!useMarkdownImport && data.content.length > 0) {
+    await docs.documents.batchUpdate({
+      documentId: doc.id!,
+      requestBody: {
+        requests: [
+          {
+            insertText: { location: { index: 1 }, text: data.content },
           },
-        },
-      ],
-    },
-  });
+          // Ensure the text is formatted as normal text, not as a header
+          {
+            updateParagraphStyle: {
+              range: {
+                startIndex: 1,
+                endIndex: data.content.length + 1,
+              },
+              paragraphStyle: {
+                namedStyleType: "NORMAL_TEXT",
+              },
+              fields: "namedStyleType",
+            },
+          },
+        ],
+      },
+    });
+  }
 
   return structuredResponse(
     `Created Google Doc: ${doc.name}\nID: ${doc.id}\nLink: ${doc.webViewLink}`,
@@ -122,12 +129,28 @@ export async function handleCreateGoogleDoc(
 }
 
 export async function handleUpdateGoogleDoc(
+  drive: drive_v3.Drive,
   docs: docs_v1.Docs,
   args: unknown,
 ): Promise<ToolResponse> {
   const validation = validateArgs(UpdateGoogleDocSchema, args);
   if (!validation.success) return validation.response;
   const data = validation.data;
+
+  if (data.contentFormat === "markdown") {
+    // Drive converts markdown natively, replacing the doc's full content
+    const updateResponse = await drive.files.update({
+      fileId: data.documentId,
+      media: { mimeType: "text/markdown", body: data.content },
+      fields: "name",
+      supportsAllDrives: true,
+    });
+
+    return structuredResponse(`Updated Google Doc: ${updateResponse.data.name}`, {
+      title: updateResponse.data.name!,
+      updated: true,
+    });
+  }
 
   const document = await docs.documents.get({ documentId: data.documentId });
 
@@ -205,6 +228,25 @@ export async function handleGetGoogleDocContent(
     const fileName = metadata.data.name || data.documentId;
     const suggestion = getMimeTypeSuggestion(mimeType);
     return errorResponse(`"${fileName}" is not a Google Doc (type: ${mimeType}). ${suggestion}`);
+  }
+
+  if (data.format === "markdown") {
+    const exportResponse = await withTimeout(
+      drive.files.export(
+        { fileId: data.documentId, mimeType: "text/markdown" },
+        { responseType: "text" },
+      ),
+      30000,
+      "Export document as markdown",
+    );
+    const markdown = String(exportResponse.data ?? "");
+
+    return structuredResponse(markdown, {
+      documentId: data.documentId,
+      title: metadata.data.name,
+      markdown,
+      totalLength: markdown.length,
+    });
   }
 
   const document = await withTimeout(

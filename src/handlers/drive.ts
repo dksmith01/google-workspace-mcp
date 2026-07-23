@@ -555,6 +555,7 @@ export async function handleGetFileMetadata(
 const EXPORT_MIME_TYPES: Record<string, string> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  md: "text/markdown",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   csv: "text/csv",
@@ -564,7 +565,7 @@ const EXPORT_MIME_TYPES: Record<string, string> = {
   odp: "application/vnd.oasis.opendocument.presentation",
 };
 
-const GOOGLE_DOC_FORMATS = ["pdf", "docx", "odt"];
+const GOOGLE_DOC_FORMATS = ["pdf", "docx", "md", "odt"];
 const GOOGLE_SHEET_FORMATS = ["pdf", "xlsx", "csv", "tsv", "ods"];
 const GOOGLE_SLIDES_FORMATS = ["pdf", "pptx", "odp"];
 

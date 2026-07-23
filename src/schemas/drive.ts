@@ -102,7 +102,7 @@ export const GetFileMetadataSchema = z.object({
 
 export const ExportFileSchema = z.object({
   fileId: z.string().min(1, "File ID is required"),
-  format: z.enum(["pdf", "docx", "xlsx", "pptx", "csv", "tsv", "odt", "ods", "odp"]),
+  format: z.enum(["pdf", "docx", "md", "xlsx", "pptx", "csv", "tsv", "odt", "ods", "odp"]),
   outputPath: z.string().optional(),
 });
 
