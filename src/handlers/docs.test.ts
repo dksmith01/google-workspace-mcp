@@ -457,8 +457,43 @@ describe("handleFormatGoogleDocRange", () => {
       fontSize: 14,
       fontFamily: "Arial",
       foregroundColor: { red: 1, green: 0, blue: 0 },
+      backgroundColor: { red: 0, green: 0, blue: 0 },
     });
     expect(result.isError).toBe(false);
+    expect(result.content[0].text).toContain("backgroundColor");
+  });
+
+  it("applies backgroundColor via updateTextStyle", async () => {
+    vi.mocked(mockDocs.documents.get).mockResolvedValue({
+      data: { body: { content: [{ endIndex: 100 }] } },
+    } as never);
+    vi.mocked(mockDocs.documents.batchUpdate).mockResolvedValue({} as never);
+
+    const result = await handleFormatGoogleDocRange(mockDocs, {
+      documentId: "doc123",
+      startIndex: 1,
+      endIndex: 10,
+      backgroundColor: { red: 0.1, green: 0.1, blue: 0.1 },
+    });
+    expect(result.isError).toBe(false);
+    expect(mockDocs.documents.batchUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestBody: {
+          requests: [
+            expect.objectContaining({
+              updateTextStyle: expect.objectContaining({
+                textStyle: {
+                  backgroundColor: {
+                    color: { rgbColor: { red: 0.1, green: 0.1, blue: 0.1 } },
+                  },
+                },
+                fields: "backgroundColor",
+              }),
+            }),
+          ],
+        },
+      }),
+    );
   });
 
   it("accepts all paragraph formatting options", async () => {

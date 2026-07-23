@@ -1509,6 +1509,15 @@ export const docsTools: ToolDefinition[] = [
             blue: { type: "number" },
           },
         },
+        backgroundColor: {
+          type: "object",
+          description: "Text background/highlight color (RGB values 0-1)",
+          properties: {
+            red: { type: "number" },
+            green: { type: "number" },
+            blue: { type: "number" },
+          },
+        },
         // Paragraph formatting
         alignment: {
           type: "string",

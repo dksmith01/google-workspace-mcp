@@ -521,6 +521,7 @@ interface DocTextFormatOptions {
   fontSize?: number;
   fontFamily?: string;
   foregroundColor?: { red?: number; green?: number; blue?: number };
+  backgroundColor?: { red?: number; green?: number; blue?: number };
 }
 
 function buildDocTextStyle(data: DocTextFormatOptions): {
@@ -557,6 +558,10 @@ function buildDocTextStyle(data: DocTextFormatOptions): {
   if (data.foregroundColor) {
     style.foregroundColor = toDocsColorStyle(data.foregroundColor);
     fields.push("foregroundColor");
+  }
+  if (data.backgroundColor) {
+    style.backgroundColor = toDocsColorStyle(data.backgroundColor);
+    fields.push("backgroundColor");
   }
 
   return { style, fields };
@@ -649,7 +654,7 @@ export async function handleFormatGoogleDocRange(
     return errorResponse(
       "No formatting options specified. Provide at least one of: " +
         "bold, italic, underline, strikethrough, fontSize, fontFamily, foregroundColor, " +
-        "namedStyleType, alignment, lineSpacing, spaceAbove, spaceBelow.",
+        "backgroundColor, namedStyleType, alignment, lineSpacing, spaceAbove, spaceBelow.",
     );
   }
 
